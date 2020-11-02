@@ -1,5 +1,8 @@
 Guide to Bridged Networking
 ===========================
+
+*Note*: you don't need to set up bridged networking just to get internet access. With `basic.sh` you should be able to access the internet from MacOS automatically. *However*, the ICMP protocol (used for `ping`) is not supported with the default networking solution. 
+
 To set up bridged networking for the macOS VM, use one of the following methods:
 
 
@@ -54,4 +57,35 @@ Once you have set up the bridge and tun/tap on the host, you'll have to add the 
 You can optionally use the `vmxnet3` driver for higher performance compared to the default e1000. Note that replacing it requires macOS El Capitan or higher.
 ```
     -device vmxnet3,netdev=net0,id=net0,mac=52:54:00:c9:18:27 \
+```
+
+## Using Netctl
+You can also use netctl and the qemu bridge helper to control the bridge and tun/tap interfaces. Replace `DEVICENAME` with your ethernet card's device name.
+
+### Create netctl configuration file in /etc/netctl (f.e. /etc/netctl/kvm-bridge)
+```
+Description="Bridge Interface br10 : DEVICENAME"
+Interface=br10
+Connection=bridge
+BindsToInterfaces=(DEVICENAME)
+IP=dhcp
+# If you want also for DHCPv6,uncomment below line
+#IP6=dhcp
+```
+
+### Activate netctl bridge handler with system boot
+```
+sudo netctl enable kvm-bridge
+```
+
+### Create bridge whitelist file for qemu (/etc/qemu/bridge.conf)
+```
+allow br10
+```
+
+## Attach Bridge to QEMU
+Now you'll have to add the following line to `basic.sh`, replacing `-netdev user,id=net0`. Change `br10` to your corresponding device name.
+
+```
+    -netdev bridge,br=br10,id=net0 \
 ```
